@@ -17,6 +17,7 @@ from .text_ocr_dataset import TextOCRDataset  # noqa: F401
 from .vqa_dataset import ConcatDataset, VQADataset  # noqa: F401
 from .baize_dataset import BaiZeDataset  # noqa: F401
 from .pubmedqa_dataset import PubMedQADataset  # noqa: F401
+from .pmcvqa_dataset import PMCVQADataset  # noqa: F401
 
 
 def build_dataset(dataset_config, **kwargs):
@@ -117,6 +118,11 @@ def build_dataset(dataset_config, **kwargs):
         )
     if dataset_type == "pubmedqa":
         dataset = PubMedQADataset(
+            **dataset_config,
+            **kwargs,
+        )
+    if dataset_type == "pmcvqa":
+        dataset = PMCVQADataset(
             **dataset_config,
             **kwargs,
         )
