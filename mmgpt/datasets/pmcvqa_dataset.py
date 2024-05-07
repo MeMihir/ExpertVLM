@@ -48,7 +48,7 @@ class PMCVQADataset(Dataset):
         tokenizer,
         vis_processor=None,
         vis_root=None,
-        ann_paths=[],
+        ann_path="",
         add_eos=True,
         ignore_instruction=True,
         sample_image=False,
@@ -61,9 +61,7 @@ class PMCVQADataset(Dataset):
         self.tokenizer: LlamaTokenizer = tokenizer
         self.vis_root = vis_root
 
-        self.annotation = []
-        for ann_path in ann_paths:
-            self.load_annotation(ann_path)
+        self.annotation = self.load_annotation(ann_path)
 
         self.vis_processor = vis_processor
         self.__add_instance_ids()
@@ -83,6 +81,15 @@ class PMCVQADataset(Dataset):
         res.update(image=image)
         res.update(text)
         return res
+    
+    def load_annotation(self, ann_path):
+        # convert csv to json
+        ann = []
+        with open(ann_path, "r") as f:
+            for line in f:
+                line = line.strip().split(",")
+                ann.append(dict(zip(["Figure_path", "Question", "Answer", "Choice A", "Choice B", "Choice C", "Choice D", "Answer_label"], line)))
+        return ann
 
     def tokenize(self, text):
         res = self.tokenizer(
