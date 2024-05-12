@@ -116,12 +116,12 @@ def build_dataset(dataset_config, **kwargs):
             **dataset_config,
             **kwargs,
         )
-    if dataset_type == "pubmedqa":
+    elif dataset_type == "pubmedqa":
         dataset = PubMedQADataset(
             **dataset_config,
             **kwargs,
         )
-    if dataset_type == "pmcvqa":
+    elif dataset_type == "pmcvqa":
         dataset = PMCVQADataset(
             **dataset_config,
             **kwargs,

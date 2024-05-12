@@ -134,12 +134,13 @@ class PMCVQADataset(Dataset):
         
 
     def __add_instance_ids(self, key="id"):
-        for ann in enumerate(self.annotation):
-            ann[key] = ann["row_idx"]
+        for idx, ann in enumerate(self.annotation):
+             ann[key] = str(idx)
 
     def collater(self, samples):
-        question_list, answer_list, input_id_list, attention_mask_list, labels_list = [], [], [], [], []
+        image_list, question_list, answer_list, input_id_list, attention_mask_list, labels_list = [], [], [], [], [], []
         for sample in samples:
+            image_list.append(sample["image"])
             question_list.append(sample["instruction"])
             answer_list.append(sample["answer"])
             input_id_list.append(sample["input_ids"])

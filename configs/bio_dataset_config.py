@@ -2,9 +2,7 @@ visual_datasets = [
     dict(
         type="pmcvqa",
         vis_root="data/pmcvqa/images",
-        ann_paths=[
-            "data/pmcvqa/train.csv",
-        ],
+        ann_path="data/pmcvqa/train.csv"
     ),
 ]
 
