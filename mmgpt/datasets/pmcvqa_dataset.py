@@ -10,7 +10,7 @@ import torch
 from PIL import Image
 from torch.utils.data import ConcatDataset, Dataset
 from torch.utils.data.dataloader import default_collate
-from transformers import LlamaTokenizer
+from transformers import AutoTokenizer
 
 TEMPLATE = {
     "description": "Template used by PMC VQA.",
@@ -58,7 +58,7 @@ class PMCVQADataset(Dataset):
         ann_root (string): directory to store the annotation file
         """
         assert tokenizer.add_eos_token is False, "tokenizer should not add eos token by default"
-        self.tokenizer: LlamaTokenizer = tokenizer
+        self.tokenizer: AutoTokenizer = tokenizer
         self.vis_root = vis_root
 
         self.annotation = self.load_annotation(ann_path)

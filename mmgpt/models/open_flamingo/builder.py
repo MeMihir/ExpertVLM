@@ -4,7 +4,7 @@ import torch
 import torch.nn as nn
 from bigmodelvis import Visualization
 from peft import LoraConfig, get_peft_model
-from transformers import LlamaForCausalLM, LlamaTokenizer
+from transformers import AutoModelForCausalLM, AutoTokenizer
 
 from .flamingo import Flamingo
 from .flamingo_lm import FlamingoLMMixin
@@ -43,7 +43,7 @@ def create_model_and_transforms(
     # set the vision encoder to output the visual features
     vision_encoder.visual.output_tokens = True
     print("init tokenizer")
-    text_tokenizer = LlamaTokenizer.from_pretrained(tokenizer_path)
+    text_tokenizer = AutoTokenizer.from_pretrained(tokenizer_path)
     # add Flamingo special tokens to the tokenizer
     text_tokenizer.add_special_tokens({"additional_special_tokens": ["<|endofchunk|>", "<image>"]})
     if text_tokenizer.pad_token is None:
@@ -53,8 +53,8 @@ def create_model_and_transforms(
     text_tokenizer.bos_token_id = 1
     text_tokenizer.eos_token_id = 2
 
-    print("init llama")
-    lang_encoder = LlamaForCausalLM.from_pretrained(lang_encoder_path)
+    print("init LM")
+    lang_encoder = AutoModelForCausalLM.from_pretrained(lang_encoder_path)
     extend_instance(lang_encoder, FlamingoLMMixin)
 
     if decoder_layers_attr_name is None:
@@ -109,6 +109,7 @@ __KNOWN_DECODER_LAYERS_ATTR_NAMES = {
     "gpt-j": "transformer.h",
     "pythia": "gpt_neox.layers",
     "llama": "model.layers",
+    "biogptforcausallm": "biogpt.layers",
 }
 
 
