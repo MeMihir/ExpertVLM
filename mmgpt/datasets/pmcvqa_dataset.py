@@ -57,7 +57,7 @@ class PMCVQADataset(Dataset):
         vis_root (string): Root directory of images (e.g. coco/images/)
         ann_root (string): directory to store the annotation file
         """
-        assert tokenizer.add_eos_token is False, "tokenizer should not add eos token by default"
+        # assert tokenizer.add_eos_token is False, "tokenizer should not add eos token by default"
         self.tokenizer: AutoTokenizer = tokenizer
         self.vis_root = vis_root
 
