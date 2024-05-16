@@ -113,10 +113,16 @@ class FlamingoLMMixin(nn.Module):
         input_ids = kwargs["input_ids"] if "input_ids" in kwargs else input[0]
         media_locations = input_ids == self.media_token_id
         attend_previous = (random.random() < 0.5) if self.use_media_placement_augmentation else False
+             
+        if self.__class__.__name__.lower() == 'BioGptForCausalLM'.lower():
+            for layer in self.biogpt.layers:
+                layer.condition_media_locations(media_locations)
+                layer.condition_attend_previous(attend_previous)
+        else:
+            for layer in self.get_decoder().layers:
+                layer.condition_media_locations(media_locations)
+                layer.condition_attend_previous(attend_previous)
 
-        for layer in self.get_decoder().layers:
-            layer.condition_media_locations(media_locations)
-            layer.condition_attend_previous(attend_previous)
 
         return super().forward(*input, **kwargs)  # Call the other parent's forward method
 
