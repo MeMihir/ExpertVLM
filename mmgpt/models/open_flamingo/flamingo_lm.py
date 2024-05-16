@@ -85,7 +85,7 @@ class FlamingoLMMixin(nn.Module):
 
         self.gated_cross_attn_layers = nn.ModuleList(
             [
-                GatedCrossAttentionBlock(dim=self.config.hidden_size, dim_visual=vis_hidden_size)
+                GatedCrossAttentionBlock(input_dim=self.config.hidden_size, dim=4096, dim_visual=vis_hidden_size)
                 if (layer_idx + 1) % cross_attn_every_n_layers == 0
                 else None
                 for layer_idx, _ in enumerate(self._get_decoder_layers())
