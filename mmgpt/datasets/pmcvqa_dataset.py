@@ -87,6 +87,7 @@ class PMCVQADataset(Dataset):
         ann = []
         with open(ann_path, "r") as f:
             for line in f:
+                if line.startswith("Figure_path"): continue
                 line = line.strip().split(",")
                 ann.append(dict(zip(["Figure_path", "Question", "Answer", "Choice A", "Choice B", "Choice C", "Choice D", "Answer_label"], line)))
         return ann
