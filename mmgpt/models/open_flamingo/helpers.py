@@ -231,7 +231,7 @@ class GatedCrossAttentionBlock(nn.Module):
     ):
         super().__init__()
         self.connect_xattn = nn.Linear(input_dim, dim)
-        self.connect_xattn_relu = nn.ReLU()
+        self.connecterh = nn.GELU()
         self.attn = MaskedCrossAttention(
             dim=dim,
             dim_visual=dim_visual,
@@ -242,6 +242,7 @@ class GatedCrossAttentionBlock(nn.Module):
         self.attn_gate = nn.Parameter(torch.tensor([0.0]))
         self.ff = FeedForward(dim, mult=ff_mult)
         self.ff_gate = nn.Parameter(torch.tensor([0.0]))
+        self.inverse_connector = nn.Linear(dim, input_dim)
 
     def forward(
         self,
@@ -251,7 +252,7 @@ class GatedCrossAttentionBlock(nn.Module):
         attend_previous=True,
     ):
         x = self.connect_xattn(x)
-        x = self.connect_xattn_relu(x)
+        x = self.connecterh(x)
         x = (
             self.attn(
                 x,
@@ -263,5 +264,7 @@ class GatedCrossAttentionBlock(nn.Module):
             + x
         )
         x = self.ff(x) * self.ff_gate.tanh() + x
+        x = self.inverse_connector(x)
+        x = self.connecterh(x)
 
         return x
