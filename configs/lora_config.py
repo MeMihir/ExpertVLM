@@ -5,5 +5,5 @@ tuning_config = dict(
     lora_alpha=16,
     lora_dropout=0.0,
     vis=True,
-    unfrozen=[],
+    unfrozen=["connect_xattn", "inverse_connector"],
 )
