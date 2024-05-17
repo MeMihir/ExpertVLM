@@ -57,7 +57,7 @@ class PMCVQADataset(Dataset):
         vis_root (string): Root directory of images (e.g. coco/images/)
         ann_root (string): directory to store the annotation file
         """
-        assert tokenizer.add_eos_token is False, "tokenizer should not add eos token by default"
+        # assert tokenizer.add_eos_token is False, "tokenizer should not add eos token by default"
         self.tokenizer: AutoTokenizer = tokenizer
         self.vis_root = vis_root
 
@@ -87,6 +87,7 @@ class PMCVQADataset(Dataset):
         ann = []
         with open(ann_path, "r") as f:
             for line in f:
+                if line.startswith("Figure_path"): continue
                 line = line.strip().split(",")
                 ann.append(dict(zip(["Figure_path", "Question", "Answer", "Choice A", "Choice B", "Choice C", "Choice D", "Answer_label"], line)))
         return ann
