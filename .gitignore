@@ -4,6 +4,7 @@ wandb/
 
 checkpoints/
 tests/
+jobscripts
 
 # Byte-compiled / optimized / DLL files
 __pycache__/
