@@ -7,7 +7,7 @@ import pandas as pd
 import torch
 from mmengine import Config
 from torch.nn.parallel import DistributedDataParallel as DDP
-from torch.utils.data import DataLoader, DistributedSampler
+from torch.utils.data import DataLoader, SequentialSampler
 from tqdm import tqdm
 
 from mmgpt import create_model_and_transforms
@@ -75,50 +75,48 @@ def parse_args():
     )
 
     args = parser.parse_args()
+    args.local_rank, args.rank = 0, 0
     return args
 
-def eval_model(args, model, test_dataloader, lang_dataloader, device_id):
-    model.eval()
-    for num_steps, batch in tqdm(enumerate(test_dataloader), disable=args.rank != 0):
-        #### VISION FORWARD PASS ####
-        images = batch["image"].to(device_id).unsqueeze(1).unsqueeze(1)
-        input_ids = batch["input_ids"].to(device_id)
-        attention_mask = batch["attention_mask"].to(device_id)
-        labels = batch["labels"].to(device_id)
+def eval_model(args, model, tokenizer, test_dataloader, lang_dataloader, device):
+    preds = []
+    answers = []
+    questions = []
 
-        all_outputs = []
-        all_outputs_decoded = []
-        all_labels = []
+    model.eval()
+    for num_steps, batch in tqdm(enumerate(test_dataloader), disable=args.rank != 0, total=len(test_dataloader)):
+        #### VISION FORWARD PASS ####
+        images = batch["image"].to(device).unsqueeze(1).unsqueeze(1)
+        input_ids = batch["input_ids"].to(device)
+        attention_mask = batch["attention_mask"].to(device)
+        answer = batch["answer"]
+        question = batch["instruction"]
 
         with torch.no_grad():
-            outputs = model(
+            output_ids = model.generate(
                 vision_x=images,
                 lang_x=input_ids,
                 attention_mask=attention_mask,
-                # labels=labels,
-            )
-            output_ids = model.module.generate(
-                vision_x=images,
-                lang_x=input_ids,
-                attention_mask=attention_mask,
-                max_length=1024,
+                max_new_tokens=1024,
                 num_beams=5,
                 temperature=1.0,
                 top_k=50,
                 top_p= 0.95,
                 do_sample=True,
-            )
-            outputs_decoded = model.tokenizer.decode(output_ids, skip_special_tokens=True)
-            all_outputs.extend(outputs)
-            all_labels.extend(labels)
-            all_outputs_decoded.extend(outputs_decoded)
+            )[0]
+            outputs_decoded = tokenizer.decode(output_ids, skip_special_tokens=True)
+            preds.append(outputs_decoded)
+        
+        answers.extend(answer)
+        questions.extend(question)
+            
 
     # create csv file on predicted vs labels
     df = pd.DataFrame(
         {
-            "labels": all_labels,
-            "predicted": all_outputs,
-            "predicted_decoded": all_outputs_decoded,
+            "question": questions,
+            "answer": answers,
+            "prediction": preds,
         }
     )
     df.to_csv(os.path.join("results", f"{args.run_name}_results.csv"), index=False)
@@ -139,8 +137,6 @@ def main():
     else:
         state_dict = ckpt
     
-    device_id = init_distributed_device(args)
-
     tuning_config = ckpt.get("tuning_config").get("tuning_config")
     if tuning_config is None: tuning_config = Config.fromfile(args.tuning_config).get("tuning_config")
     if tuning_config is None:
@@ -158,8 +154,10 @@ def main():
     )
     model.load_state_dict(state_dict, strict=False)
     # model.half()
-    model = model.to("cuda")
+    # model = model.to("cuda")
     model.eval()
+    tokenizer.padding_side = "left"
+    tokenizer.add_eos_token = False
 
     if args.dataset_config is not None:
         dataset_config = Config.fromfile(args.dataset_config)
@@ -175,7 +173,7 @@ def main():
         dataset,
         batch_size=args.batch_size,
         num_workers=args.workers,
-        sampler=DistributedSampler(dataset, shuffle=False, drop_last=True),
+        sampler=SequentialSampler(dataset),
         collate_fn=dataset.collater,
     )
 
@@ -197,13 +195,12 @@ def main():
 
     random_seed(args.seed, args.rank)
 
-    device_id = args.rank % torch.cuda.device_count()
-    model = model.to(device_id)
+    print("Start evaluation")
+    device = torch.device("cuda" if torch.cuda.is_available() else "cpu")
+    model = model.to(device)
+    model.eval()
 
-    ddp_model = DDP(model, device_ids=[device_id], find_unused_parameters=True)
-
-    ddp_model.eval()
-    eval_model(args, ddp_model, test_dataloader, lang_dataloader, device_id)
+    eval_model(args, model, tokenizer, test_dataloader, lang_dataloader, device)
 
 if __name__ == "__main__":
     main()
